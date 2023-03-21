@@ -2,30 +2,81 @@ package FactorialWithQueues;
 
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.LinkedBlockingQueue;
 
 public class Variables {
 
 
     // Finalni rezultat
-    public static int result = 1;
+    private  int result = 1;
 
     // Ovo je broj za koj trazimo faktorial
-    public static int value = 5;
+    private int value = 5;
 
     // Red za vrednosti koje treba da se mnoze
-    public static final BlockingQueue<Integer> factors = new LinkedBlockingQueue<>();
+    private final BlockingQueue<Integer> factors;
 
 
     // Red u koj threadovi koj racunaju upisuju njihove lokalne rezultate
-    public static final BlockingQueue<Integer> results = new LinkedBlockingQueue<>();
+    private final BlockingQueue<Integer> results;
 
     //broj jezgara
-    public static final int THREAD_NUMBER = Runtime.getRuntime().availableProcessors();
+    private final int THREAD_NUMBER;
 
     // Latch koj blokira main thread dok se ne zavrse threadovi koj se bave mnozenjem
-    public static final CountDownLatch countDownLatch = new CountDownLatch(THREAD_NUMBER);
+    private final CountDownLatch multiplierFinished;
 
-    // Lock koj sluzi da blokira main thread dok ResultCalculator ne zavrsi sa radom
-    public static final Object resultCalculatorLock = "resultCalculatorLock";
+    private final CountDownLatch resultFinished;
+
+
+    public synchronized void multiplyWithResult(int val) {
+        this.result *= val;
+    }
+
+
+
+
+    public Variables(int value, BlockingQueue<Integer> factors, BlockingQueue<Integer> results, int THREAD_NUMBER, CountDownLatch multiplierFinished, CountDownLatch resultFinished) {
+        this.value = value;
+        this.factors = factors;
+        this.results = results;
+        this.THREAD_NUMBER = THREAD_NUMBER;
+        this.multiplierFinished = multiplierFinished;
+        this.resultFinished = resultFinished;
+    }
+
+    public void setResult(int result) {
+        this.result = result;
+    }
+
+    public int getValue() {
+        return value;
+    }
+
+    public void setValue(int value) {
+        this.value = value;
+    }
+
+    public BlockingQueue<Integer> getFactors() {
+        return factors;
+    }
+
+    public BlockingQueue<Integer> getResults() {
+        return results;
+    }
+
+    public int getTHREAD_NUMBER() {
+        return THREAD_NUMBER;
+    }
+
+    public CountDownLatch getMultiplierFinished() {
+        return multiplierFinished;
+    }
+
+    public int getResult() {
+        return result;
+    }
+
+    public CountDownLatch getResultFinished() {
+        return resultFinished;
+    }
 }

@@ -2,22 +2,35 @@ package FactorialWithQueues;
 
 public class ResultCalculator extends Thread{
 
+    private Variables variables;
+
+    public ResultCalculator(Variables variables) {
+        this.variables = variables;
+    }
+
     @Override
     public void run() {
-        super.run();
 
-        while (!Variables.results.isEmpty() || Variables.countDownLatch.getCount() != 0) {
-            try {
-                int val = Variables.results.take();
-                Variables.result *= val;
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
+
+        try {
+            variables.getMultiplierFinished().await();
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+
+        Integer val;
+
+        while (true) {
+            val = variables.getResults().poll();
+
+            if (val == null) {
+                variables.getResultFinished().countDown();
+                break;
             }
+            variables.multiplyWithResult(val);
+
         }
 
-        synchronized (Variables.resultCalculatorLock) {
-            Variables.resultCalculatorLock.notifyAll();
-        }
 
         System.out.println("Result calculator zavrsio!!!");
     }

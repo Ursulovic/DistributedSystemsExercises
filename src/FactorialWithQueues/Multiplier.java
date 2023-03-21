@@ -1,35 +1,42 @@
 package FactorialWithQueues;
 
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
+
 public class Multiplier extends Thread{
     private int myResult;
 
     private int id;
 
-    public Multiplier(int id) {
+    private Variables variables;
+
+    public Multiplier(int id, Variables variables) {
         this.id = id;
+        this.variables = variables;
         myResult = 1;
     }
 
     @Override
     public void run() {
-        super.run();
-        int val;
+        Integer val;
         while (true) {
             try {
-                synchronized (Variables.factors) {
-                    if (Variables.factors.isEmpty())
-                        break;
-                    val = Variables.factors.take();
-                }
+
+                val = variables.getFactors().poll(2, TimeUnit.SECONDS);
+
+                if (val == null)
+                    break;
 
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);
             }
-            myResult *= val;
+            this.myResult *= val;
         }
 
-        Variables.results.add(myResult);
-        Variables.countDownLatch.countDown();
+        variables.getResults().add(myResult);
+        variables.getMultiplierFinished().countDown();
         System.out.println("Thread " + id + " zavrsio!");
     }
 
@@ -37,35 +44,39 @@ public class Multiplier extends Thread{
     //--------------------------------------------------------------
     //--------------------------------------------------------------
     public static void main(String[] args) {
-        while (Variables.value != 0) {
-            Variables.factors.add(Variables.value--);
+
+        //promenjive za Variables
+        int value = 5;
+        int THREAD_NUMBER = Runtime.getRuntime().availableProcessors();
+
+        BlockingQueue<Integer> factors = new LinkedBlockingQueue<>();
+        BlockingQueue<Integer> resultsd = new LinkedBlockingQueue<>();
+        CountDownLatch multiplierFinished = new CountDownLatch(THREAD_NUMBER);
+        CountDownLatch resultFinished = new CountDownLatch(1);
+
+        Variables variables = new Variables(value, factors, resultsd, THREAD_NUMBER, multiplierFinished, resultFinished);
+
+        while (variables.getValue() != 0) {
+            variables.getFactors().add(variables.getValue());
+            variables.setValue(variables.getValue() - 1);
         }
 
 
-        for (int i = 0; i < Variables.THREAD_NUMBER; i++) {
-            Multiplier multiplier = new Multiplier(i);
+        for (int i = 0; i < variables.getTHREAD_NUMBER(); i++) {
+            Multiplier multiplier = new Multiplier(i, variables);
             multiplier.start();
         }
 
-        ResultCalculator resultCalculator = new ResultCalculator();
+        ResultCalculator resultCalculator = new ResultCalculator(variables);
         resultCalculator.start();
 
         try {
-            Variables.countDownLatch.await();
+            variables.getResultFinished().await();
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
 
-
-        synchronized (Variables.resultCalculatorLock) {
-            try {
-                Variables.resultCalculatorLock.wait();
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
-            }
-        }
-
-        System.out.println("Final result: " + Variables.result);
+        System.out.println("Final result: " + variables.getResult());
 
     }
 
