@@ -33,8 +33,6 @@ public class Variables {
     }
 
 
-
-
     public Variables(int value, BlockingQueue<Integer> factors, BlockingQueue<Integer> results, int THREAD_NUMBER, CountDownLatch multiplierFinished, CountDownLatch resultFinished) {
         this.value = value;
         this.factors = factors;

@@ -35,7 +35,11 @@ public class Multiplier extends Thread{
             this.myResult *= val;
         }
 
-        variables.getResults().add(myResult);
+        try {
+            variables.getResults().put(myResult);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
         variables.getMultiplierFinished().countDown();
         System.out.println("Thread " + id + " zavrsio!");
     }
